@@ -6,6 +6,7 @@ import io.jenkins.plugins.conventionalcommits.process.ProcessHelper;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Objects;
 
 /** This class focus on getting the current version (latest release version) of a project. */
 public class CurrentVersion {
@@ -57,14 +58,12 @@ public class CurrentVersion {
    */
   public Version getCurrentVersion(File directory, String latestTag, PrintStream logger)
       throws IOException, InterruptedException {
+    Objects.requireNonNull(processHelper, "Process helper is mandatory");
 
     Version currentVersion;
     ProjectType projectType = ProjectTypeFactory.getProjectType(directory);
 
     if (projectType != null) {
-      if (processHelper == null) {
-        processHelper = new DefaultProcessHelper();
-      }
       currentVersion = projectType.getCurrentVersion(directory, processHelper);
     } else {
       currentVersion = getCurrentVersionTag(latestTag);

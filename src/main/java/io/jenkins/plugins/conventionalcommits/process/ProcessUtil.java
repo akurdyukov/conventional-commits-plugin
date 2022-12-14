@@ -1,10 +1,10 @@
 package io.jenkins.plugins.conventionalcommits.process;
 
 import com.google.common.io.LineReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import hudson.Launcher;
+import hudson.Proc;
+
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -42,14 +42,18 @@ public class ProcessUtil {
    * @throws IOException          If an error occur accessing files.
    * @throws InterruptedException If the command is interrupted.
    */
-  public static String execute(File dir, String... commandAndArgs)
+  public static String execute(Launcher launcher, File dir, String... commandAndArgs)
       throws IOException, InterruptedException {
-    ProcessBuilder builder = new ProcessBuilder().directory(dir).command(commandAndArgs);
+    Proc process = launcher.launch()
+            .cmds("git", "log", "--pretty=format:%s")
+            .pwd(dir)
+            .readStdout()
+            .readStderr()
+            .start();
 
-    Process process = builder.start();
-    int exitCode = process.waitFor();
+    int exitCode = process.join();
     if (exitCode != 0) {
-      String stderr = stdout(process.getErrorStream());
+      String stderr = stdout(process.getStderr());
       throw new IOException(
           "executing '"
               + String.join(" ", commandAndArgs)
@@ -60,6 +64,6 @@ public class ProcessUtil {
               + " and error "
               + stderr);
     }
-    return stdout(process.getInputStream());
+    return stdout(process.getStdout());
   }
 }

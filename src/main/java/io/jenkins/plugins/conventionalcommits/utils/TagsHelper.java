@@ -2,6 +2,7 @@ package io.jenkins.plugins.conventionalcommits.utils;
 
 import static io.jenkins.plugins.conventionalcommits.process.ProcessUtil.execute;
 
+import hudson.Launcher;
 import hudson.model.TaskListener;
 import java.io.File;
 import java.io.IOException;
@@ -25,13 +26,16 @@ public class TagsHelper {
     Objects.requireNonNull(dir, "Directory is mandatory");
     Objects.requireNonNull(context, "Context is mandatory");
 
+    Launcher launcher = context.get(Launcher.class);
+    // TODO: protect launcher
+
     String latestTag = "";
     try {
       if (includeNonAnnotatedTags) {
-        latestTag = execute(dir, "git", "tag", "-l").trim();
+        latestTag = execute(launcher, dir, "git", "tag", "-l").trim();
         latestTag = latestTag.substring(latestTag.lastIndexOf("\n") + 1);
       } else {
-        latestTag = execute(dir, "git", "describe", "--abbrev=0", "--tags").trim();
+        latestTag = execute(launcher, dir, "git", "describe", "--abbrev=0", "--tags").trim();
       }
     } catch (IOException exp) {
       if (exp.getMessage().contains("No names found, cannot describe anything.")) {

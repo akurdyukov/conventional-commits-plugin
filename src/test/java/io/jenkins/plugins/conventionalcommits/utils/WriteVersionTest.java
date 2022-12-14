@@ -74,8 +74,7 @@ public class WriteVersionTest {
     assertThat(processHelper, is(notNullValue()));
     when(processHelper.runProcessBuilder(mavenDir, command)).thenReturn("2.0.0");
 
-    WriteVersion writer = new WriteVersion();
-    writer.setProcessHelper(processHelper);
+    WriteVersion writer = new WriteVersion(processHelper);
     writer.write(Version.valueOf("2.0.0"), mavenDir);
 
     verify(processHelper).runProcessBuilder(any(), captor.capture());
@@ -89,7 +88,7 @@ public class WriteVersionTest {
     File dir = rootFolder.newFolder("SampleProject");
     String message = "Could not write the next version to the configuration file.";
 
-    WriteVersion writer = new WriteVersion();
+    WriteVersion writer = new WriteVersion(processHelper);
     writer.write(Version.valueOf("1.0.0"), dir);
 
     verify(mockedHandler).publish(logRecordCaptor.capture());

@@ -2,9 +2,9 @@ package io.jenkins.plugins.conventionalcommits.utils;
 
 import com.github.zafarkhaja.semver.Version;
 import io.jenkins.plugins.conventionalcommits.process.ProcessHelper;
-import io.jenkins.plugins.conventionalcommits.process.ProcessUtil;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Scanner;
 import java.util.logging.Level;
 import org.json.JSONObject;
@@ -58,7 +58,7 @@ public class PhpProjectType extends ProjectType {
         result = (String) composerJsonObject.get("version");
       } else {
         try {
-          result = ProcessUtil.execute(directory, "git", "describe", "--abbrev=0", "--tags").trim();
+          result = processHelper.runProcessBuilder(directory, Arrays.asList("git", "describe", "--abbrev=0", "--tags")).trim();
         } catch (IOException exp) {
           String message = "No Git tags found";
           LogUtils logger = new LogUtils();

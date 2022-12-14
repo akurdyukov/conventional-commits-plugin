@@ -1,17 +1,17 @@
 package io.jenkins.plugins.conventionalcommits.utils;
 
 import com.github.zafarkhaja.semver.Version;
-import io.jenkins.plugins.conventionalcommits.process.DefaultProcessHelper;
 import io.jenkins.plugins.conventionalcommits.process.ProcessHelper;
 import java.io.File;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.logging.Level;
 
 /** Class to write back the calculated next semantic version into the config file of a project. */
 public class WriteVersion {
-  private ProcessHelper processHelper;
+  private final ProcessHelper processHelper;
 
-  public void setProcessHelper(ProcessHelper processHelper) {
+  public WriteVersion(ProcessHelper processHelper) {
     this.processHelper = processHelper;
   }
 
@@ -25,14 +25,12 @@ public class WriteVersion {
    */
   public String write(Version nextVersion, File directory)
       throws IOException, InterruptedException {
+    Objects.requireNonNull(processHelper, "Process helper is mandatory");
 
     ProjectType projectType = ProjectTypeFactory.getProjectType(directory);
     String message = "The next version was written to the configuration file.";
 
     if (projectType != null) {
-      if (processHelper == null) {
-        processHelper = new DefaultProcessHelper();
-      }
       projectType.writeVersion(directory, nextVersion, processHelper);
     } else {
       message = "Could not write the next version to the configuration file.";

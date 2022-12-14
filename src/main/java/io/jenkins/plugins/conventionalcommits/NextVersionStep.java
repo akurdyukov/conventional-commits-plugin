@@ -8,7 +8,10 @@ import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.FilePath;
+import hudson.Launcher;
 import hudson.model.TaskListener;
+import io.jenkins.plugins.conventionalcommits.process.DefaultProcessHelper;
+import io.jenkins.plugins.conventionalcommits.process.ProcessHelper;
 import io.jenkins.plugins.conventionalcommits.utils.CurrentVersion;
 import io.jenkins.plugins.conventionalcommits.utils.WriteVersion;
 import java.io.File;
@@ -18,11 +21,7 @@ import java.util.List;
 import java.util.Set;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.workflow.steps.Step;
-import org.jenkinsci.plugins.workflow.steps.StepContext;
-import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
-import org.jenkinsci.plugins.workflow.steps.StepExecution;
-import org.jenkinsci.plugins.workflow.steps.SynchronousStepExecution;
+import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
@@ -205,6 +204,10 @@ public class NextVersionStep extends Step {
         throw new IOException("no workspace");
       }
 
+      Launcher launcher = getContext().get(Launcher.class);
+      ProcessHelper processHelper = new DefaultProcessHelper(launcher);
+      // TODO: protect launcher
+
       // if the workspace is remote then lets make a local copy
       File dir = new File(workspace.getRemote());
       String latestTag = getLatestTag(getContext(), dir, nonAnnotatedTag);
@@ -214,12 +217,13 @@ public class NextVersionStep extends Step {
 
       String commitMessagesString = null;
       if (latestTag.isEmpty()) {
-        commitMessagesString = execute(dir, "git", "log", "--pretty=format:%s").trim();
+        // TODO: check return code
+        commitMessagesString = execute(launcher, dir, "git", "log", "--pretty=format:%s").trim();
       } else {
         // FIXME get a list of commits between 'this' and the tag
         // git log --pretty=format:%s tag..HEAD
         commitMessagesString =
-            execute(dir, "git", "log", "--pretty=format:%s", latestTag + "..HEAD").trim();
+            execute(launcher, dir, "git", "log", "--pretty=format:%s", latestTag + "..HEAD").trim();
       }
 
       List<String> commitHistory = Arrays.asList(commitMessagesString.split("\n"));
@@ -255,7 +259,7 @@ public class NextVersionStep extends Step {
       getContext().get(TaskListener.class).getLogger().println(nextVersion);
 
       if (writeVersion) {
-        WriteVersion writer = new WriteVersion();
+        WriteVersion writer = new WriteVersion(processHelper);
         String writeLog = writer.write(nextVersion, dir);
         getContext().get(TaskListener.class).getLogger().println(writeLog);
       }
@@ -277,7 +281,7 @@ public class NextVersionStep extends Step {
 
     @Override
     public Set<? extends Class<?>> getRequiredContext() {
-      return ImmutableSet.of(TaskListener.class, FilePath.class);
+      return ImmutableSet.of(TaskListener.class, FilePath.class, Launcher.class);
     }
 
     @Override
